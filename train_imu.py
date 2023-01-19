@@ -12,12 +12,13 @@ from models import MLP
 
 # load data
 
-data_path = os.path.dirname(os.path.realpath(__file__)) + "/data/"
+data_path = os.path.dirname(os.path.realpath(__file__)) + "/data/labeled_data/"
+print(data_path)
 train_test_val_split = [0.6, 0.2, 0.2]
 batch_size = 64
 num_workers = 8
 imu_data = IMUData(data_path, train_test_val_split, batch_size, 
-                   num_workers, load_data=False)
+                   num_workers, load_data=True)
 D = imu_data.data_dim
 K = imu_data.n_classes
 

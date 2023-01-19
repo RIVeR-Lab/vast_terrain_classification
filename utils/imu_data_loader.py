@@ -1,6 +1,7 @@
 import os
 import numpy as np
 import torch
+from tqdm import tqdm
 from torch import nn
 from torch.utils.data import random_split, DataLoader
 
@@ -18,6 +19,21 @@ LABELS = {
     10: "turf"
 }
 
+LABELS_REVERSED = {
+    "asphalt": 0, 
+    "brick": 1, 
+    "carpet": 2, 
+    "concrete": 3, 
+    "grass": 4, 
+    "gravel": 5, 
+    "ice": 6, 
+    "mulch": 7, 
+    "sand": 8, 
+    "tile": 9, 
+    "turf": 10
+}
+
+
 
 class IMUData:
 
@@ -28,9 +44,10 @@ class IMUData:
         self.data_path = data_path
 
         if load_data:
-            self.train_loader = torch.load(self.data_path + 'data_loaders/imu_train.dl')
-            self.val_loader = torch.load(self.data_path + 'data_loaders/imu_val.dl')
-            self.test_loader = torch.load(self.data_path + 'data_loaders/imu_test.dl')
+            use_path = os.path.abspath(os.path.join(self.data_path,'..','data_loaders'))
+            self.train_loader = torch.load(f'{use_path}/imu_train.dl')
+            self.val_loader = torch.load(f'{use_path}/imu_val.dl')
+            self.test_loader = torch.load(f'{use_path}/imu_test.dl')
             self.N_train = len(self.train_loader.dataset)
             self.N_val = len(self.val_loader.dataset)
             self.N_test = len(self.test_loader.dataset)
@@ -58,9 +75,11 @@ class IMUData:
             self.test_loader = DataLoader(test_data, batch_size=batch_size,
                                     num_workers=num_workers, shuffle=False)
 
-            torch.save(self.train_loader, self.data_path + 'data_loaders/imu_train.dl')
-            torch.save(self.val_loader, self.data_path + 'data_loaders/imu_val.dl')
-            torch.save(self.test_loader, self.data_path + 'data_loaders/imu_test.dl')
+            use_path = os.path.abspath(os.path.join(self.data_path,'..','data_loaders'))
+            # print(use_path)
+            torch.save(self.train_loader, f'{use_path}/imu_train.dl')
+            torch.save(self.val_loader, f'{use_path}/imu_val.dl')
+            torch.save(self.test_loader, f'{use_path}/imu_test.dl')
 
         print(f"Total number of samples: {self.N_total}")
         print(f"Number of training samples: {self.N_train}")
@@ -74,19 +93,23 @@ class IMUData:
         labels = []
         n_samples = 0
 
-        for label in LABELS:
-            for dir in os.listdir(self.data_path):
-                if not os.path.isdir(self.data_path + dir) or "patches" in dir:
-                    continue
-                if LABELS[label] in dir:
-                    for file in os.listdir(self.data_path + dir):
-                        if 'imu' in file:
-                            print(dir + '/' + file)
-                            data.append(np.load(self.data_path + dir + '/' + file))
-                            N = data[-1].shape[0]
-                            n_samples += N
-                            labels.append(label * np.ones(N))
-
+        # for label in LABELS:
+        #     print(f'Loading label: {label}')
+        for label in tqdm(os.listdir(self.data_path)):
+            # print(label)
+            #if LABELS[label] in dir:
+            for file in os.listdir(self.data_path + label):
+                if 'imu' in file:
+                    # print(label + '/' + file)
+                    data.append(np.load(self.data_path + label + '/' + file).astype(np.float16))
+                    N = data[-1].shape[0]
+                    # print(data[-1].shape)
+                    n_samples += N
+                    # Grab the numeric label
+                    use_label = LABELS_REVERSED[label]
+                    labels.append(use_label * np.ones(N))
+        data = np.array(data)
+        print(data.shape)
         # IMU data:
         #    orientation.x
         #    orientation.y
@@ -103,28 +126,29 @@ class IMUData:
         # linear_acceleration, and linear_jerk (first-order diff of linear_acceleration)
 
         labeled_data = []
-
-        for i, d in enumerate(data):
-
+        for i, d in tqdm(enumerate(data)):
+            # print(d.shape)
             imu_data = np.vstack(d)
             imu_data = imu_data[:, 4:]  # remove orientation data
 
             first_diff = np.vstack([imu_data[i] - imu_data[i-1] 
                                     for i in range(1, imu_data.shape[0])])
+            # print(first_diff.shape)
+            if first_diff.shape[1] == 0:
+                # print('Skipping data data')
+                continue
             first_diff = first_diff[:, np.array([3, 4, 5, 0, 1, 2])]  # reorder
-
+            # print(first_diff.shape)
             imu_data = imu_data[1:, :]  # same size as first_diff
             imu_data = np.hstack((imu_data[:, 3:], first_diff))
-
             N = imu_data.shape[0]
-            print(imu_data.shape)
-
+            
             # keep last 10 imu data samples (IMU runs at about 10x rate of camera/spec)
-            imu_data = np.vstack([imu_data[i:i+10, :].flatten() for i in range(N - 10)])
+            imu_data = np.vstack([imu_data[i:i+10, :].flatten() for i in range(N//10)])
+            # print(imu_data.shape)
             N, D = imu_data.shape
             corr_labels = torch.tensor(labels[i][:N], dtype=torch.int64)
-            # corr_labels = nn.functional.one_hot(corr_labels, num_classes=self.n_classes).double()
-
+            # print(corr_labels.shape)
             labeled_data += [[imu_data[i, :], corr_labels[i]] for i in range(N)]
-        
+        print(len(labeled_data))
         return labeled_data

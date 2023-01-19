@@ -27,10 +27,7 @@ use_models = {
 # load model(s)
 model_path = os.path.dirname(os.path.realpath(__file__)) + "/weights/"
 model_files = [
-    model_path + "fused/val_fused_img_spec_imu_20220302_002711_24.wts",
-    # model_path + "fused_img_imu/val_fused_img_imu_20220302_012319_24.wts",
-    # model_path + "fused_img_spec/val_fused_img_spec_20220302_012815_22.wts",
-    # model_path + "fused_spec_imu/val_fused_spec_imu_20220302_013253_24.wts",
+    model_path + "val_fused_img_spec_imu_20230118_223719_23.wts",
 ]
 
 device = 'cuda' if torch.cuda.is_available() else 'cpu'
@@ -65,19 +62,6 @@ for i, file in enumerate(model_files):
     model.load_state_dict(torch.load(file))
     results = eval_fused_model(model, test_loader, device, loss_fn, N_test)
     avg_test_loss, accuracy, true_labels, pred_labels = results
-    #torch.where((true_labels == pred_labels).all(dim=1))[0]
-    #plt.imshow()
-    # view confusion matrix 
-    # (i, j is # samples with true label i and pred label j)
-    '''
-    cm = confusion_matrix(true_labels, pred_labels)
-    cmd = ConfusionMatrixDisplay(cm, display_labels=label_names)
-    cmd.plot(xticks_rotation=45)
-    plt.title("Fused Confusion Matrix")
-    plt.savefig("results/fused_conf_mat_{}.png".format(i))
-    plt.show()
-    '''
-
     class_names_cap = list(map(lambda x: x.capitalize(), label_names))
     plt.rcParams["font.family"] = "Times New Roman"
     cm = confusion_matrix(true_labels, pred_labels)
@@ -94,4 +78,3 @@ for i, file in enumerate(model_files):
     plt.savefig("results/fused_conf_mat_{}.png".format(i))
     plt.show()
     print("f1 score:", f1_score(true_labels, pred_labels, average='macro'))
-    #plt.show(block=False)

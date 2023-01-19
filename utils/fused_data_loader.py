@@ -56,14 +56,6 @@ class FusedData(Dataset):
         else:
             raise Exception("one of train, val, or test must be true")
         
-        # self.min_spec_ind = 250
-        # self.max_spec_ind = 1800
-        # self.dark_min = torch.tensor(np.load(self.data_dir + "../00_spectral_ref/dark_min.npy"))
-        # self.light_max = torch.tensor(np.load(self.data_dir + "../00_spectral_ref/light_max.npy"))
-        # self.light_max = torch.clamp(self.light_max,min=2000)
-        # self.dark_min = self.dark_min[self.min_spec_ind:self.max_spec_ind]
-        # self.light_max = self.light_max[self.min_spec_ind:self.max_spec_ind]
-        
     def __len__(self):
         return len(self.inds)
     
@@ -80,24 +72,6 @@ class FusedData(Dataset):
         if self.use_models["spec"]:
             feature = torch.hstack((feature, full_feature[22:]))
         label = torch.tensor(np.load(self.data_dir + prefix + "label.npy"))
-        # label = nn.functional.one_hot(label, num_classes=11).double()
-
-        # imu = np.load(self.data_dir + prefix + "imu.npy")
-        # imu = transform_imu(imu)
-
-        # spec = np.load(self.data_dir + prefix + "spec.npy")
-        # spec = transform_spec(spec, self.min_spec_ind, self.max_spec_ind,
-        #                       self.dark_min, self.light_max)
-        
-        # try:
-        #     img = Image.open(self.data_dir + prefix + "img.jpg")
-        # except:
-        #     img = np.zeros((816,816,3))
-        #     print(f'Failed to load image data for index: {idx}')
-        # img = img_transforms["train"](img)
-        # label = np.load(self.data_dir + prefix + "label.npy")
-        # return [img, imu, spec], label
-        
         return feature, label
 
 def transform_spec(data, min_spec_ind, max_spec_ind, dark_min, light_max):

@@ -8,7 +8,7 @@ def validate_batch(model, val_loader, loss_fn, device):
     running_loss = 0.0
     correct = 0
     for i, val_data in enumerate(val_loader):
-        inputs, true_labels = val_data[0].to(device), val_data[1].to(device)
+        inputs, true_labels = val_data[0].to(device).double(), val_data[1].to(device)
         
         # calculate loss
         output = model(inputs)
@@ -33,7 +33,7 @@ def train_epochs(data, **train_args):
     n_epochs = train_args["n_epochs"]
     writer = train_args["writer"]
     save_prefix = train_args["save_prefix"]
-
+    
     timestamp = datetime.now().strftime('%Y%m%d_%H%M%S')
     best_val_loss = 1e6
     best_val_acc = 0.0
@@ -53,7 +53,7 @@ def train_epochs(data, **train_args):
         print('ACCURACY val {}\n'.format(correct / data.N_val))
         train_loss.append(avg_train_loss)
         val_loss.append(avg_val_loss)
-        val_acc.append(correct / data.N_val)
+        val_acc.append((correct / data.N_val).cpu())
 
         writer.add_scalars('training vs. validation loss',
                         { 'training' : avg_train_loss, 'validation': avg_val_loss },
@@ -75,8 +75,7 @@ def train_epoch(model, data_loader, loss_fn, optimizer, device, epoch_index, tb_
     total_correct = 0
 
     for i, data in enumerate(data_loader):
-        inputs, true_labels = data[0].to(device), data[1].to(device)
-
+        inputs, true_labels = data[0].to(device).double(), data[1].to(device)
         optimizer.zero_grad()
         output = model(inputs)
 

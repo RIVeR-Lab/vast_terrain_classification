@@ -62,28 +62,6 @@ val_loader = DataLoader(
 device = 'cuda' if torch.cuda.is_available() else 'cpu'
 print(f'Using {device} device')
 
-# load img, imu, spec models
-
-# img_model_path = os.path.dirname(os.path.realpath(__file__)) + "/weights/" + \
-#     "img_resnet18/resnet18.wts"
-# img_model = models.resnet18(pretrained=True)
-# num_ftrs = img_model.fc.in_features
-# img_model.fc = nn.Linear(num_ftrs, n_classes)
-# img_model.load_state_dict(torch.load(img_model_path))
-# img_model = img_model.to(device).double()
-
-# imu_model_path = os.path.dirname(os.path.realpath(__file__)) + "/weights/" + \
-#     "imu_512_512/imu_20220224_100811_97"
-# imu_data_dim = 90
-# imu_model = MLP(imu_data_dim, n_classes, imu_num_hidden_layers, imu_num_perceptrons).to(device).double()
-# imu_model.load_state_dict(torch.load(imu_model_path))
-
-# spec_model_path = os.path.dirname(os.path.realpath(__file__)) + "/weights/" + \
-#     "spectral_small_dropout_better/spectral_20220224_094224_79"
-# spec_data_dim = 1550
-# spec_model = MLP(spec_data_dim, n_classes, spec_num_hidden_layers, spec_num_perceptrons).to(device).double()
-# spec_model.load_state_dict(torch.load(spec_model_path))
-
 # set up model
 
 n_models = 3
@@ -120,7 +98,6 @@ train_args = {
     "N_val": N_val
 }
 
-# other_models =  [img_model, imu_model, spec_model]
 train_loss, val_loss, val_acc = train_fused_epochs(
     fused_model, train_loader, val_loader, **train_args
 )

@@ -12,7 +12,7 @@ from models import MLP
 
 # load data
 
-data_path = os.path.dirname(os.path.realpath(__file__)) + "/data/"
+data_path = os.path.dirname(os.path.realpath(__file__)) + "/data/labeled_data/"
 train_test_val_split = [0.6, 0.2, 0.2]
 batch_size = 16
 num_workers = 4
